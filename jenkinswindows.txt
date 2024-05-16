@@ -1,0 +1,102 @@
+pipeline {
+    agent any
+    
+    tools{
+        
+        jdk 'jdk-21'
+        maven 'maven-3.9.6'
+    }
+
+    stages {
+        stage('git') {
+            steps {
+                
+                git branch: 'main', credentialsId: 'git', url: 'https://github.com/PreethaRedd/jenkins_windows'
+
+            }      
+            }
+             stage('maven build') {
+            steps {
+                bat 'C:\\Windows\\System32\\cmd.exe /c mvn clean install'
+            }
+        }
+}
+}
+          
+        
+   
+
+
+pipeline {
+    agent any
+    
+    environment {
+        AWS_DEFAULT_REGION = "us-east-1" // Set your AWS region
+    }
+
+
+ tools{
+        
+        jdk 'jdk-21'
+        maven 'maven-3.9.6'
+    }
+
+    stages {
+        stage('git') {
+            steps {
+                
+                git branch: 'main', credentialsId: 'git', url: 'https://github.com/PreethaRedd/mindcircuit13.git'
+
+            }      
+            }
+
+        stage('Terraform Init') {
+            steps {
+                dir('C:\\terraform\\terraform_1.5.7_windows_amd64') {
+                    withCredentials([aws(credentialsId: 'AWS', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                        bat '"terraform.exe" init'
+                    }
+                }
+            }
+        }
+
+        stage('Terraform Plan') {
+            steps {
+                dir('C:\\terraform\\terraform_1.5.7_windows_amd64') {
+                    withCredentials([aws(credentialsId: 'AWS', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                        bat '"terraform.exe" plan -out=tfplan'
+                    }
+                }
+            }
+        }
+
+        stage('Terraform Apply') {
+            steps {
+                dir('C:\\terraform\\terraform_1.5.7_windows_amd64') {
+                    withCredentials([aws(credentialsId: 'AWS', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                        bat '"terraform.exe" apply -auto-approve tfplan'
+                    }
+                }
+            }
+        }
+
+        // Uncomment this stage if you want to add destroy step
+        // stage('Terraform Destroy') {
+        //     steps {
+        //         dir('path_to_your_terraform_files') {
+        //             withCredentials([aws(credentialsId: 'your-aws-credentials-id', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+        //                 bat '"terraform.exe" destroy -auto-approve'
+        //             }
+        //         }
+        //     }
+        // }
+    }
+
+    // Uncomment this section if you want to clean up the workspace after the build
+    // post {
+    //     always {
+    //         cleanWs()
+    //     }
+    // }
+}
+ 
